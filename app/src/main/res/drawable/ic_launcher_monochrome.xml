@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Themed-icon (monochrome) layer for Android 13+ "Themed icons" feature.
+
+  Must be a single-color silhouette - the launcher tints it according to
+  the user's wallpaper-derived theme. We re-use the OUTER flame silhouette
+  from ic_launcher_foreground so the themed icon still looks like a flame.
+
+  The fillColor here is irrelevant - the launcher overrides it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,18
+                          C 50,28 42,34 38,42
+                          C 34,50 32,56 36,60
+                          C 30,58 26,52 26,46
+                          C 22,52 20,60 22,68
+                          C 24,80 36,90 54,90
+                          C 72,90 84,80 86,68
+                          C 88,60 86,52 82,46
+                          C 82,52 78,58 72,60
+                          C 76,56 74,50 70,42
+                          C 66,34 58,28 54,18 Z" />
+</vector>

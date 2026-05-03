@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive icon background layer. 108dp x 108dp canvas.
+
+  A warm vertical gradient evoking heat — deep red at the bottom rising
+  to a bright yellow-orange at the top, hinting at flame colors before
+  the foreground flame is even drawn on top.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="android:fillColor">
+            <gradient
+                android:startX="54"
+                android:startY="0"
+                android:endX="54"
+                android:endY="108"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FFD43B" />
+                <item android:offset="0.5" android:color="#FF6B1A" />
+                <item android:offset="1.0" android:color="#B71C1C" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

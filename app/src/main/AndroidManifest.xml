@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Network permissions for running HTTP server and monitoring network state -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- High-perf Wi-Fi lock: pins the Wi-Fi radio at full power. Without this
+         the radio drops into a low-power scan mode after a few seconds of
+         inactivity, adding 50-200 ms of latency to the first request after
+         each idle window. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!-- Foreground service permissions for keeping server running in background -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"
+        tools:ignore="ForegroundServicesPolicy" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <!-- Notification permission for Android 13+ (foreground service requires notification) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Wake lock permission for maximum CPU performance -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Request to ignore battery optimizations for maximum performance -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Hint to the system that we want sustained, high-power performance.
+         This is what mobile games request and grants access to the GPU
+         performance counters and prevents the kernel from scheduling us
+         on battery-saving little cores when there is heavy work to do.
+         The HighSamplingRate lint warning is suppressed because we
+         declare this permission intentionally for the perf hint, not
+         to read sensors. -->
+    <uses-permission
+        android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
+        tools:ignore="HighSamplingRate" />
+
+    <!-- Required hardware features. Declaring these explicitly tells the
+         Play Store NOT to install on devices that lack 64-bit ARM CPUs
+         (where LiteRT GPU/NPU paths are not supported anyway). -->
+    <uses-feature android:name="android.hardware.opengles.aep" android:required="false" />
+
+    <application
+        android:name=".LlmServerApplication"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LocalLLMServer"
+        android:enableOnBackInvokedCallback="true"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true"
+        android:requestRawExternalStorageAccess="false">
+
+        <!-- ===================================================================
+             NATIVE LIBRARY DECLARATIONS — required for GPU/NPU acceleration
+             =================================================================== -->
+        <!-- OpenCL: GPU compute kernels (Adreno, Mali, Xclipse, IMG). -->
+        <uses-native-library android:name="libOpenCL.so" android:required="false"/>
+        <uses-native-library android:name="libOpenCL-pixel.so" android:required="false"/>
+        <uses-native-library android:name="libOpenCL-car.so" android:required="false"/>
+        <!-- VNDK support shim required by some OEM OpenCL stacks. -->
+        <uses-native-library android:name="libvndksupport.so" android:required="false"/>
+        <!-- Qualcomm Snapdragon NPU (HTP / QNN) -->
+        <uses-native-library android:name="libQnnSystem.so" android:required="false"/>
+        <uses-native-library android:name="libQnnHtp.so" android:required="false"/>
+        <uses-native-library android:name="libcdsprpc.so" android:required="false"/>
+        <!-- MediaTek APU -->
+        <uses-native-library android:name="libneuron_adapter.so" android:required="false"/>
+        <!-- Google Tensor / EdgeTPU (Pixel) -->
+        <uses-native-library android:name="libedgetpu_util.so" android:required="false"/>
+
+        <!-- App Startup ContentProvider — single entry point for early
+             initialization. We hook into it to apply CPU/GPU perf settings
+             before the very first frame is composed. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="de.cyclenerd.android.llm.server.perf.PerformanceInitializer"
+                android:value="androidx.startup" />
+        </provider>
+
+        <!-- Main Activity. -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.LocalLLMServer"
+            android:hardwareAccelerated="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density|fontScale|smallestScreenSize"
+            android:resizeableActivity="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Foreground Service for running LLM server. -->
+        <service
+            android:name=".service.LlmServerService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false"
+            android:stopWithTask="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Local LLM inference server for development and testing" />
+        </service>
+
+    </application>
+
+</manifest>

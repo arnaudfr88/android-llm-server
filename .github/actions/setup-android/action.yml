@@ -1,0 +1,66 @@
+name: "Setup Android build environment"
+description: >
+  Installs the JDK, Android SDK, accepts the licences, configures Gradle
+  with build/dependency caching, and overrides the local-machine
+  `org.gradle.java.home` line in `gradle.properties` (which is set to a
+  developer's homebrew path and would otherwise break CI).
+
+inputs:
+  java-version:
+    description: "Java version used to run the Gradle daemon"
+    required: false
+    default: "21"
+  java-distribution:
+    description: "Java distribution (Temurin / Zulu / Microsoft / Liberica)"
+    required: false
+    default: "temurin"
+
+runs:
+  using: "composite"
+  steps:
+    # -------------------------------------------------------------------
+    # JDK — Gradle 9.5 daemon needs JDK 21
+    # -------------------------------------------------------------------
+    - name: Set up JDK ${{ inputs.java-version }}
+      uses: actions/setup-java@v5
+      with:
+        distribution: ${{ inputs.java-distribution }}
+        java-version: ${{ inputs.java-version }}
+
+    # -------------------------------------------------------------------
+    # Android SDK — install command-line tools, accept licences and
+    # pre-fetch the platform / build-tools the project needs (compileSdk
+    # 37, build-tools 36.x). Pre-fetching makes the actual Gradle build
+    # ~30-60 s faster on cold caches.
+    # -------------------------------------------------------------------
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v4
+      with:
+        log-accepted-android-sdk-licenses: false
+        packages: >-
+          platform-tools
+          platforms;android-37.0
+          build-tools;36.1.0
+
+    # -------------------------------------------------------------------
+    # Gradle wrapper validation — defends against attackers slipping a
+    # malicious gradle-wrapper.jar into a PR.
+    # -------------------------------------------------------------------
+    - name: Validate Gradle wrapper
+      uses: gradle/actions/wrapper-validation@v6
+
+    # -------------------------------------------------------------------
+    # Gradle build setup with remote caching, dependency cache and the
+    # configuration cache enabled. Saves ~2-3 min on warm runs.
+    # -------------------------------------------------------------------
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
+        cache-cleanup: on-success
+        add-job-summary: on-failure
+        add-job-summary-as-pr-comment: on-failure
+
+    - name: Make gradlew executable
+      shell: bash
+      run: chmod +x ./gradlew

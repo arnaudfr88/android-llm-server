@@ -1,0 +1,53 @@
+# =============================================================================
+# Baseline Profile — install-time AOT compile of the hottest paths
+# =============================================================================
+# Each line is "<flags><class-or-method-descriptor>" in the standard ART
+# format used by Google Play. The profileinstaller library (added as a
+# dependency in build.gradle.kts) installs this profile at app install,
+# which causes ART to pre-compile these methods to native code instead of
+# JIT-compiling them on first use.
+#
+# Real world: ~30 % faster cold start, much smoother first inference.
+# These rules cover:
+#   - Application boot path
+#   - Performance hooks
+#   - LiteRT engine initialise + warm-up
+#   - Ktor request pipeline
+#   - SSE streaming write loop
+#   - Compose dashboard composition
+# =============================================================================
+
+# --- Application boot ---
+HSPLde/cyclenerd/android/llm/server/LlmServerApplication;->onCreate()V
+HSPLde/cyclenerd/android/llm/server/perf/PerformanceInitializer;->create(Landroid/content/Context;)V
+HSPLde/cyclenerd/android/llm/server/perf/PerformanceManager;->applyProcessWide(Landroid/content/Context;)Z
+HSPLde/cyclenerd/android/llm/server/perf/PerformanceManager;->applyWindow(Landroid/view/Window;)V
+HSPLde/cyclenerd/android/llm/server/perf/PerformanceManager;->boostCurrentThread(Ljava/lang/String;)V
+HSPLde/cyclenerd/android/llm/server/perf/BackendSelector;->select(Landroid/content/Context;Z)Lde/cyclenerd/android/llm/server/perf/BackendSelector$Selection;
+
+# --- UI / activity ---
+HSPLde/cyclenerd/android/llm/server/ui/MainActivity;->onCreate(Landroid/os/Bundle;)V
+
+# --- Inference hot path ---
+HSPLde/cyclenerd/android/llm/server/inference/LlmEngine;->initialize(Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+HSPLde/cyclenerd/android/llm/server/inference/LlmEngine;->createConversation(Lcom/google/ai/edge/litertlm/ConversationConfig;)Lcom/google/ai/edge/litertlm/Conversation;
+HSPLde/cyclenerd/android/llm/server/inference/ConversationManager;->withConversation(Ljava/util/List;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+HSPLde/cyclenerd/android/llm/server/inference/StreamingHandler;->streamResponse(Lcom/google/ai/edge/litertlm/Conversation;Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
+HSPLde/cyclenerd/android/llm/server/inference/MetricsCollector;->onToken()V
+HSPLde/cyclenerd/android/llm/server/inference/MetricsCollector;->onStart()V
+
+# --- Ktor server hot path ---
+HSPLde/cyclenerd/android/llm/server/server/KtorServer;->start(Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+HSPLde/cyclenerd/android/llm/server/server/routes/ChatRoutingKt;->configureChatRoutes(Lio/ktor/server/application/Application;Lde/cyclenerd/android/llm/server/inference/ConversationManager;Lkotlin/jvm/functions/Function1;)V
+
+# --- Kotlinx & coroutines glue (broad class rules accepted by the format) ---
+HSPLkotlinx/coroutines/internal/LimitedDispatcher;->**(**)**
+HSPLkotlinx/coroutines/scheduling/CoroutineScheduler;->**(**)**
+HSPLkotlinx/coroutines/flow/internal/SafeCollector;->**(**)**
+
+# --- Logger fast path ---
+HSPLde/cyclenerd/android/llm/server/utils/Logger;->i(Ljava/lang/String;Ljava/lang/String;)V
+HSPLde/cyclenerd/android/llm/server/utils/Logger;->d(Ljava/lang/String;Ljava/lang/String;)V
+
+# --- Compose dashboard ---
+HSPLde/cyclenerd/android/llm/server/ui/DashboardScreenKt;->DashboardScreen(**)V

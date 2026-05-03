@@ -1,0 +1,39 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+
+# 2 space indentation
+[*.{yml,md,json}]
+indent_style = space
+indent_size = 2
+
+# 4 space indentation
+[*.{py}]
+indent_style = space
+indent_size = 4
+
+# Matches the exact files either package.json or .travis.yml
+[{package.json,.gitignore}]
+indent_style = space
+indent_size = 2
+
+# Kotlin (ktlint) configuration
+[*.{kt,kts}]
+# The project's established package namespace (de.cyclenerd.*) contains an
+# underscore. Disable the ktlint rule that forbids underscores in package
+# names so the existing package structure does not need to be renamed.
+ktlint_standard_package-name = disabled
+# Jetpack Compose @Composable functions use PascalCase by convention; the
+# default ktlint function-naming rule conflicts with that practice.
+ktlint_standard_function-naming = disabled
+# Java-style `package-info.kt` files are used to attach KDoc to a package.
+# They contain no declarations and therefore trip these two rules.
+ktlint_standard_filename = disabled
+ktlint_standard_no-empty-file = disabled

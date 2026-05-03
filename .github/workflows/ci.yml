@@ -1,0 +1,136 @@
+name: CI
+
+# Triggered for every PR (any branch) and every push to a long-lived branch.
+# Tag pushes are deliberately excluded — those are handled by release.yml.
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [main, master, develop]
+
+# Cancel any in-flight CI for the same branch / PR when a new commit lands.
+# Saves runner minutes and keeps the queue snappy.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Default permission set — read repo, write check runs (so green/red ticks
+# show up next to commits). Nothing else.
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  # ---------------------------------------------------------------------
+  # Static analysis: ktlint formatting + Android Lint.
+  # Runs first because it's the fastest fail-fast gate.
+  # ---------------------------------------------------------------------
+  lint:
+    name: Lint & format
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          # Fetch the full history so PR-only diff jobs (future) can see
+          # the merge base. Cheap on a sub-100-MB repo.
+          fetch-depth: 0
+
+      - name: Setup Android build environment
+        uses: ./.github/actions/setup-android
+
+      - name: ktlint check
+        run: ./gradlew ktlintCheck --stacktrace
+
+      - name: Android Lint (debug variant)
+        run: ./gradlew :app:lintDebug --stacktrace
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lint-report
+          path: |
+            app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-debug.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ---------------------------------------------------------------------
+  # Unit tests — runs on the JVM, no emulator needed.
+  # ---------------------------------------------------------------------
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Android build environment
+        uses: ./.github/actions/setup-android
+
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Publish JUnit results
+        if: always()
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: 'app/build/test-results/testDebugUnitTest/*.xml'
+          check_name: 'Unit test results'
+          fail_on_failure: true
+          require_tests: true
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-report
+          path: |
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/test-results/testDebugUnitTest/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ---------------------------------------------------------------------
+  # Build the fully-optimised release APK. This is the ONLY artefact CI
+  # ever produces — no AAB, no mapping, no native debug symbols.
+  #
+  # Why `assembleRelease` and not `assembleDebug`?
+  # The release variant enables R8 full-mode shrinking + obfuscation,
+  # resource shrinking, PNG crunching, native-debug-symbol stripping,
+  # `Logger.d` / `Log.d` erasure via -assumenosideeffects, the
+  # PERF_LOGGING=false BuildConfig flag, baseline-profile activation,
+  # and runs without the JIT-disabling `debuggable=true` flag. The
+  # CPU/GPU/NPU runtime tuning (PerformanceManager, BackendSelector,
+  # wake locks, sustained perf, big-core pinning, warm-up inference) is
+  # the same Kotlin code in both variants — what changes is whether the
+  # rest of the bytecode is fast enough to keep up with it.
+  #
+  # The APK is signed with the auto-generated debug keystore so it is
+  # install-able directly. It is NOT a Play-Store-ready artefact.
+  # ---------------------------------------------------------------------
+  build-apk:
+    name: Build APK (release, debug-signed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    needs: [lint, unit-tests]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Android build environment
+        uses: ./.github/actions/setup-android
+
+      - name: Assemble release APK (R8 + minify + shrink)
+        run: ./gradlew :app:assembleRelease --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive icon foreground layer. 108dp x 108dp canvas.
+
+  Inner 72dp x 72dp (centered) is the SAFE ZONE - the system mask may crop
+  the outer 18dp ring to a circle, squircle, rounded square, etc.
+
+  This flame is deliberately drawn within the safe zone (x: 18-90, y: 18-90)
+  so it survives every mask shape.
+
+  Two-tone flame: a bright yellow inner flame on top of a deeper orange
+  outer flame, both with curved bezier paths to evoke the classic three-
+  pointed fire-emoji silhouette. Pure white highlight at the tip-base
+  catches the eye at small sizes (48dp launcher).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer flame: deep orange, three-pointed silhouette.
+         Path traces a flame from base (54,90) up the left curve, peaks
+         at top (54,18), back down the right curve, with two small notches
+         on the sides hinting at the classic flame shape. -->
+    <path
+        android:fillColor="#FF5722"
+        android:pathData="M54,18
+                          C 50,28 42,34 38,42
+                          C 34,50 32,56 36,60
+                          C 30,58 26,52 26,46
+                          C 22,52 20,60 22,68
+                          C 24,80 36,90 54,90
+                          C 72,90 84,80 86,68
+                          C 88,60 86,52 82,46
+                          C 82,52 78,58 72,60
+                          C 76,56 74,50 70,42
+                          C 66,34 58,28 54,18 Z" />
+
+    <!-- Inner flame: bright yellow-orange, smaller, sits inside the outer
+         flame. Same general silhouette, scaled towards the centre. -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M54,42
+                          C 51,48 46,52 44,58
+                          C 42,64 42,70 46,74
+                          C 40,72 36,68 36,62
+                          C 34,68 34,74 38,80
+                          C 42,86 50,88 54,88
+                          C 58,88 66,86 70,80
+                          C 74,74 74,68 72,62
+                          C 72,68 68,72 62,74
+                          C 66,70 66,64 64,58
+                          C 62,52 57,48 54,42 Z" />
+
+    <!-- Hot core: pale yellow blob near the bottom, the brightest spot. -->
+    <path
+        android:fillColor="#FFF59D"
+        android:pathData="M54,68
+                          C 50,68 46,72 46,76
+                          C 46,82 50,86 54,86
+                          C 58,86 62,82 62,76
+                          C 62,72 58,68 54,68 Z" />
+</vector>

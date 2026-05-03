@@ -1,0 +1,37 @@
+version: 2
+updates:
+  # Keep the GitHub Actions used by ci.yml / release.yml /
+  # instrumented-tests.yml on their latest semver-compatible versions.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+
+  # Keep Gradle dependencies up to date (Ktor, Compose, LiteRT, AndroidX,
+  # kotlinx). Group all Compose / Lifecycle / Ktor bumps into a single PR
+  # to keep review noise down.
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps"
+    groups:
+      androidx-compose:
+        patterns:
+          - "androidx.compose*"
+      androidx-lifecycle:
+        patterns:
+          - "androidx.lifecycle*"
+      ktor:
+        patterns:
+          - "io.ktor*"
+      kotlinx:
+        patterns:
+          - "org.jetbrains.kotlinx*"

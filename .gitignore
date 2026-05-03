@@ -1,0 +1,108 @@
+# Gradle files
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local configuration
+local.properties
+
+# Android Studio
+.idea/
+*.iml
+.externalNativeBuild
+.cxx
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Built application files
+*.apk
+*.ap_
+*.aab
+.kotlin
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Generated files
+bin/
+gen/
+out/
+release/
+
+# Signing files
+*.jks
+*.keystore
+
+# Captures
+captures/
+
+# NDK
+obj/
+
+# IntelliJ
+*.iws
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/misc.xml
+.idea/modules.xml
+
+# Android Profiler
+*.hprof
+
+# Keystore files
+# Uncomment the following lines if you do not want to check your keystore files in.
+#*.jks
+#*.keystore
+
+# External native build folder generated in Android Studio 2.2 and later
+.externalNativeBuild
+.cxx/
+
+# Google Services (e.g. APIs or Firebase)
+# google-services.json
+
+# Freeline
+freeline.py
+freeline/
+freeline_project_description.json
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
+
+# Version control
+vcs.xml
+
+# Lint
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+lint-baseline.xml
+
+# ktlint
+.ktlint
+
+# Model files (large binary files)
+*.litertlm
+*.tflite
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+.pytest_cache
+.venv
+venv
