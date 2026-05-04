@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "de.cyclenerd.android.llm.server"
-        minSdk = 36
+        minSdk = 33
         targetSdk = 37
         // ---------------------------------------------------------------
         // VERSION — single source of truth.
