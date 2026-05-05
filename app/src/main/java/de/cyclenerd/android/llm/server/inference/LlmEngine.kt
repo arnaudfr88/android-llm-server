@@ -1,6 +1,8 @@
 package de.cyclenerd.android.llm.server.inference
 
 import androidx.tracing.trace
+import com.google.ai.edge.litertlm.ExperimentalApi
+import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import de.cyclenerd.android.llm.server.perf.PerformanceManager
@@ -77,6 +79,11 @@ class LlmEngine(
                 require(modelFile.exists()) { "Model file not found: $modelPath" }
                 Logger.i(TAG, "Model file size: ${modelFile.length() / 1_000_000} MB")
                 modelName = modelFile.nameWithoutExtension
+
+                // Enable MTP via speculative decoding
+                // https://ai.google.dev/edge/litert-lm/android#mtp
+                @OptIn(ExperimentalApi::class)
+                ExperimentalFlags.enableSpeculativeDecoding = true
 
                 val config =
                     EngineConfig(
