@@ -85,32 +85,43 @@ val RECOMMENDED_MODELS =
     listOf(
         RecommendedModel(
             // https://ai.google.dev/gemma/docs/core/model_card_4
+            // https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/tree/main
+            // https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/commit/6e5c4f1e395deb959c494953478fa5cec4b8008f
             name = "Google DeepMind / Gemma 4 E2B",
             description = "Best balance of speed and quality. Perfect for most phones.",
-            sizeMb = 2583,
+            sizeMb = 2588,
             downloadUrl =
                 "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/" +
-                    "resolve/main/gemma-4-E2B-it.litertlm?download=true",
+                        "resolve/6e5c4f1e395deb959c494953478fa5cec4b8008f/" +
+                        "gemma-4-E2B-it.litertlm?download=true",
             minRamGb = 4,
-            sha256 = "ab7838cdfc8f77e54d8ca45eadceb20452d9f01e4bfade03e5dce27911b27e42",
+            sha256 = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
         ),
         RecommendedModel(
             // https://ai.google.dev/gemma/docs/core/model_card_4
+            // https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm
+            // https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/commit/28299f30ee4d43294517a4ac93abd6163412f07f
             name = "Google DeepMind / Gemma 4 E4B",
             description = "Higher quality responses, slower generation. Best for flagship mobiles.",
-            sizeMb = 3654,
+            sizeMb = 3659,
             downloadUrl =
                 "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/" +
-                    "resolve/main/gemma-4-E4B-it.litertlm?download=true",
+                        "resolve/28299f30ee4d43294517a4ac93abd6163412f07f/" +
+                        "gemma-4-E4B-it.litertlm?download=true",
             minRamGb = 8,
-            sha256 = "f335f2bfd1b758dc6476db16c0f41854bd6237e2658d604cbe566bcefd00a7bc",
+            sha256 = "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
         ),
         RecommendedModel(
             // https://huggingface.co/Qwen/Qwen3-0.6B
+            // https://huggingface.co/litert-community/Qwen3-0.6B/tree/main
+            // https://huggingface.co/litert-community/Qwen3-0.6B/commit/cd3d6309f014106a001bf1bac5957ae11f4202c3
             name = "Alibaba Cloud / Qwen3 0.6B",
             description = "Best for low-end mobiles.",
             sizeMb = 614,
-            downloadUrl = "https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B.litertlm?download=true",
+            downloadUrl =
+                "https://huggingface.co/litert-community/Qwen3-0.6B/" +
+                        "resolve/cd3d6309f014106a001bf1bac5957ae11f4202c3/" +
+                        "Qwen3-0.6B.litertlm?download=true",
             minRamGb = 2,
             sha256 = "555579ff2f4fd13379abe69c1c3ab5200f7338bc92471557f1d6614a6e5ab0b4",
         ),
