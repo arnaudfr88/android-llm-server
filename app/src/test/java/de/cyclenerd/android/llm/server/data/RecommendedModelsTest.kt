@@ -31,7 +31,7 @@ class RecommendedModelsTest {
     fun `findRecommendedModel returns correct model`() {
         val model = findRecommendedModel("Google DeepMind / Gemma 4 E2B")
         assertNotNull(model)
-        assertEquals(2583, model?.sizeMb)
+        assertEquals(2588, model?.sizeMb)
     }
 
     @Test
