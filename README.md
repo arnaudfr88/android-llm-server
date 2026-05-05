@@ -197,4 +197,4 @@ This project is licensed under the [Apache License 2.0](./LICENSE).
 
 ## Disclaimer
 
-This project is an independent Open Source initiative and is not affiliated with, endorsed by, or associated with Google, Deepmind, Hugging Face, Alibaba or OpenAI. All trademarks and registered trademarks are the property of their respective owners.
+This project is an independent Open Source initiative and is not affiliated with, endorsed by, or associated with Google, Deepmind, Hugging Face or OpenAI. All trademarks and registered trademarks are the property of their respective owners.

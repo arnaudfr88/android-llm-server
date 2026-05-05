@@ -111,20 +111,6 @@ val RECOMMENDED_MODELS =
             minRamGb = 8,
             sha256 = "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
         ),
-        RecommendedModel(
-            // https://huggingface.co/Qwen/Qwen3-0.6B
-            // https://huggingface.co/litert-community/Qwen3-0.6B/tree/main
-            // https://huggingface.co/litert-community/Qwen3-0.6B/commit/cd3d6309f014106a001bf1bac5957ae11f4202c3
-            name = "Alibaba Cloud / Qwen3 0.6B",
-            description = "Best for low-end mobiles.",
-            sizeMb = 614,
-            downloadUrl =
-                "https://huggingface.co/litert-community/Qwen3-0.6B/" +
-                        "resolve/cd3d6309f014106a001bf1bac5957ae11f4202c3/" +
-                        "Qwen3-0.6B.litertlm?download=true",
-            minRamGb = 2,
-            sha256 = "555579ff2f4fd13379abe69c1c3ab5200f7338bc92471557f1d6614a6e5ab0b4",
-        ),
     )
 
 /**
