@@ -154,7 +154,7 @@ ktlint {
 
 dependencies {
     // LiteRT-LM for inference (pinned to latest for newest GPU/NPU kernels).
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.10.2")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.11.0")
 
     // Ktor for HTTP server
     implementation("io.ktor:ktor-server-core:3.4.3")
@@ -225,7 +225,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.11.0")
 }
 
 // Configure Kotlin to target JVM 21 with optimisations:
