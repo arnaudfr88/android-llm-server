@@ -180,7 +180,7 @@ This is expected. App runs at maximum performance. Keep device plugged in.
 
 ## ADB Commands
 
-If you manage your device remotely or want to automate the server, you can use the Android Debug Bridge (ADB).
+If you manage your device remotely or want to automate the server, you can use the [Android Debug Bridge](https://developer.android.com/tools/adb) (ADB).
 
 **Launch the app:**
 ```bash
