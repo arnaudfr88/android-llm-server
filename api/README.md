@@ -27,7 +27,6 @@ The server runs on port **8080** and binds only to local IP addresses.
 **Example URLs:**
 - `http://192.168.211.100:8080`
 - `http://10.0.0.100:8080`
-- `http://127.0.0.1:8080` (localhost, same device only)
 
 **Important:** Replace `192.168.211.100` with your actual device IP in all examples below.
 
