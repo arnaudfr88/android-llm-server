@@ -163,9 +163,10 @@ object NotificationHelper {
      * @return NotificationCompat.Action
      */
     private fun createStopAction(context: Context): NotificationCompat.Action {
-        val stopIntent = Intent(ACTION_STOP_SERVICE).apply {
-            setPackage(context.packageName)
-        }
+        val stopIntent =
+            Intent(ACTION_STOP_SERVICE).apply {
+                setPackage(context.packageName)
+            }
         val stopPendingIntent =
             PendingIntent.getBroadcast(
                 context,

@@ -26,9 +26,10 @@ class AppPreferences(
     /**
      * Whether to auto-start the server when the app is launched.
      */
-    val autoStartServer: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[AUTO_START_SERVER] ?: false
-    }
+    val autoStartServer: Flow<Boolean> =
+        dataStore.data.map { prefs ->
+            prefs[AUTO_START_SERVER] ?: false
+        }
 
     suspend fun setAutoStartServer(enabled: Boolean) {
         dataStore.edit { prefs ->
