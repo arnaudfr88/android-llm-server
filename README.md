@@ -178,6 +178,20 @@ This is expected. App runs at maximum performance. Keep device plugged in.
 
 ⚠️ **Do not expose to public internet.**
 
+## ADB Commands
+
+If you manage your device remotely or want to automate the server, you can use the Android Debug Bridge (ADB).
+
+**Launch the app:**
+```bash
+adb shell am start -n de.cyclenerd.android.llm.server/.ui.MainActivity
+```
+
+**Stop the app:**
+```bash
+adb shell am force-stop de.cyclenerd.android.llm.server
+```
+
 ## For Developers
 
 Built entirely in **Kotlin**, this project leverages Jetpack Compose for the UI, Ktor for the HTTP server, and LiteRT for the inference engine. Notably, **AI assistance was used heavily in the development of this project**, assisting in everything from architectural decisions to implementation.
