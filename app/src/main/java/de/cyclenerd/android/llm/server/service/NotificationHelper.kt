@@ -112,7 +112,7 @@ object NotificationHelper {
         val builder =
             NotificationCompat
                 .Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle("Local LLM Server")
                 .setContentText(state.toDisplayText())
                 .setOngoing(true)
@@ -163,7 +163,9 @@ object NotificationHelper {
      * @return NotificationCompat.Action
      */
     private fun createStopAction(context: Context): NotificationCompat.Action {
-        val stopIntent = Intent(ACTION_STOP_SERVICE)
+        val stopIntent = Intent(ACTION_STOP_SERVICE).apply {
+            setPackage(context.packageName)
+        }
         val stopPendingIntent =
             PendingIntent.getBroadcast(
                 context,

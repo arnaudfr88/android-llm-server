@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Notification icon for status bar.
+  
+  Status bar icons MUST be:
+  - Monochrome (single color)
+  - White foreground on transparent background
+  - Simple silhouette (avoid fine details)
+  
+  The system tints this white icon according to the notification priority
+  and theme. We use the flame silhouette from the app icon.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Flame silhouette scaled from 108dp to 24dp viewBox -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,4
+                          C 11.1,6.2 9.3,7.6 8.4,9.3
+                          C 7.6,11.1 7.1,12.4 7.9,13.3
+                          C 6.7,12.9 5.8,11.6 5.8,10.2
+                          C 4.9,11.6 4.4,13.3 4.9,15.1
+                          C 5.3,17.8 8,20 12,20
+                          C 16,20 18.7,17.8 19.1,15.1
+                          C 19.6,13.3 19.1,11.6 18.2,10.2
+                          C 18.2,11.6 17.3,12.9 16.1,13.3
+                          C 16.9,12.4 16.4,11.1 15.6,9.3
+                          C 14.7,7.6 12.9,6.2 12,4 Z" />
+</vector>

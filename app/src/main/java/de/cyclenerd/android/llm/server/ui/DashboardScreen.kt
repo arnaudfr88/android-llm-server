@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -80,6 +81,7 @@ import de.cyclenerd.android.llm.server.ui.components.ServerControlSection
 @Composable
 fun DashboardScreen(
     onNavigateToModels: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     viewModel: DashboardViewModel = viewModel(),
 ) {
     // Collect state from ViewModel
@@ -115,7 +117,10 @@ fun DashboardScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            DashboardAppBar(onNavigateToModels = onNavigateToModels)
+            DashboardAppBar(
+                onNavigateToModels = onNavigateToModels,
+                onNavigateToSettings = onNavigateToSettings,
+            )
         },
     ) { paddingValues ->
         // paddingValues comes from Scaffold and includes system bar insets
@@ -159,7 +164,8 @@ fun DashboardScreen(
  *
  * Displays:
  * - App title
- * - Settings icon (navigates to model management)
+ * - Model management icon (settings/gear icon)
+ * - Startup settings icon (power icon)
  *
  * Why TopAppBar?
  * Material 3 standard component that provides:
@@ -168,11 +174,15 @@ fun DashboardScreen(
  * - Action button positioning
  * - Elevation/shadow
  *
- * @param onNavigateToModels Callback when settings icon clicked
+ * @param onNavigateToModels Callback when models icon clicked
+ * @param onNavigateToSettings Callback when startup settings icon clicked
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardAppBar(onNavigateToModels: () -> Unit) {
+fun DashboardAppBar(
+    onNavigateToModels: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+) {
     TopAppBar(
         title = { Text("Local LLM Server") },
         actions = {
@@ -180,6 +190,12 @@ fun DashboardAppBar(onNavigateToModels: () -> Unit) {
                 Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = "Model Management",
+                )
+            }
+            IconButton(onClick = onNavigateToSettings) {
+                Icon(
+                    imageVector = Icons.Default.PowerSettingsNew,
+                    contentDescription = "Startup Settings",
                 )
             }
         },

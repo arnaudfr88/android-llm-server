@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.net.wifi.WifiManager
 import android.os.IBinder
 import android.os.PowerManager
+import androidx.core.content.ContextCompat
 import androidx.tracing.trace
 import de.cyclenerd.android.llm.server.data.ModelRepository
 import de.cyclenerd.android.llm.server.data.ModelStorage
@@ -72,7 +73,12 @@ class LlmServerService : Service() {
         PerformanceManager.applyProcessWide(applicationContext)
 
         NotificationHelper.createNotificationChannel(this)
-        registerReceiver(stopReceiver, IntentFilter(NotificationHelper.ACTION_STOP_SERVICE), RECEIVER_NOT_EXPORTED)
+        ContextCompat.registerReceiver(
+            this,
+            stopReceiver,
+            IntentFilter(NotificationHelper.ACTION_STOP_SERVICE),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
 
         // Acquire service-scope wake + WiFi locks. These are independent of
         // the activity's locks so the server keeps running at full speed

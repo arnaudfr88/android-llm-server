@@ -1,23 +1,32 @@
 package de.cyclenerd.android.llm.server.ui
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.runtime.Composable
 import androidx.core.net.toUri
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.lifecycleScope
 import androidx.tracing.Trace
+import de.cyclenerd.android.llm.server.data.AppPreferences
 import de.cyclenerd.android.llm.server.perf.PerformanceManager
+import de.cyclenerd.android.llm.server.service.LlmServerService
 import de.cyclenerd.android.llm.server.ui.theme.LocalLLMServerTheme
 import de.cyclenerd.android.llm.server.utils.Logger
+import kotlinx.coroutines.launch
 
 /**
  * Main Activity — entry point for the Local LLM Server UI.
@@ -42,6 +51,15 @@ import de.cyclenerd.android.llm.server.utils.Logger
  */
 class MainActivity : ComponentActivity() {
     private var hiPerfWifiLock: WifiManager.WifiLock? = null
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                Logger.i(TAG, "✓ Notification permission granted")
+            } else {
+                Logger.w(TAG, "⚠ Notification permission denied - notifications will not be shown")
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,7 +89,10 @@ class MainActivity : ComponentActivity() {
                 // best effort
             }
 
-            // 5. Ask the user to disable battery optimisations the first
+            // 5. Request notification permission (Android 13+)
+            requestNotificationPermission()
+
+            // 6. Ask the user to disable battery optimisations the first
             // time the app is launched. Required for true 24/7 inference.
             requestBatteryOptimizationExemption()
 
@@ -88,8 +109,27 @@ class MainActivity : ComponentActivity() {
             Logger.i(TAG, "  - Display: max refresh rate")
             Logger.i(TAG, "  - WiFi: high-perf lock acquired")
             Logger.i(TAG, "════════════════════════════════════════════════")
+
+            // 7. Handle auto-start if enabled
+            handleAutoStart()
         } finally {
             Trace.endSection()
+        }
+    }
+
+    private fun handleAutoStart() {
+        lifecycleScope.launch {
+            try {
+                val preferences = AppPreferences(applicationContext)
+                val autoStartEnabled = preferences.getAutoStartServer()
+
+                if (autoStartEnabled) {
+                    Logger.i(TAG, "Auto-start enabled, starting server...")
+                    LlmServerService.start(applicationContext)
+                }
+            } catch (e: Exception) {
+                Logger.e(TAG, "Error checking auto-start preference", e)
+            }
         }
     }
 
@@ -122,6 +162,42 @@ class MainActivity : ComponentActivity() {
             hiPerfWifiLock = null
         } catch (_: Throwable) {
             // best effort
+        }
+    }
+
+    /**
+     * Requests notification permission on Android 13+ (API 33+).
+     *
+     * Android 13 introduced runtime permission for notifications.
+     * Without this permission, foreground service notifications
+     * won't be shown, which can cause the service to be killed.
+     *
+     * On Android 12 and below, notifications are allowed by default.
+     *
+     * This is called once on app launch. If the user denies permission,
+     * they can grant it later in Settings → Apps → Notifications.
+     */
+    private fun requestNotificationPermission() {
+        // minSdk = 36, so we're always on Android 13+ where POST_NOTIFICATIONS exists
+        when {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                Logger.i(TAG, "✓ Notification permission already granted")
+            }
+
+            shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
+                // User previously denied permission. Show rationale and request again.
+                Logger.i(TAG, "Requesting notification permission (user previously denied)")
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+
+            else -> {
+                // First time requesting permission
+                Logger.i(TAG, "Requesting notification permission (first time)")
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
     }
 
@@ -169,6 +245,7 @@ class MainActivity : ComponentActivity() {
  *
  *  - "dashboard" — main screen with server controls
  *  - "models" — model management screen
+ *  - "settings" — startup settings screen (auto-start)
  */
 @Composable
 fun AppNavigation() {
@@ -184,10 +261,22 @@ fun AppNavigation() {
                     Logger.i("Navigation", "Navigating to model management")
                     navController.navigate("models")
                 },
+                onNavigateToSettings = {
+                    Logger.i("Navigation", "Navigating to settings")
+                    navController.navigate("settings")
+                },
             )
         }
         composable("models") {
             ModelManagementScreen(
+                onNavigateBack = {
+                    Logger.i("Navigation", "Navigating back to dashboard")
+                    navController.popBackStack()
+                },
+            )
+        }
+        composable("settings") {
+            SettingsScreen(
                 onNavigateBack = {
                     Logger.i("Navigation", "Navigating back to dashboard")
                     navController.popBackStack()
