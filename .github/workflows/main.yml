@@ -1,0 +1,170 @@
+name: Release
+
+# Triggered when a tag matching v* is pushed (e.g. v1.0.0, v2.3.1-beta).
+# Also exposed as workflow_dispatch so a maintainer can rebuild a release
+# from the GitHub UI without re-tagging.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re-)build"
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false  # Never cancel a release in progress.
+
+permissions:
+  contents: write   # Needed to create the GitHub Release and upload assets.
+
+jobs:
+  release:
+    name: Build & publish release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # -----------------------------------------------------------------
+      # Checkout the exact tagged commit (or the SHA the dispatch tag
+      # points at). Full history is fetched so the changelog generator
+      # can produce a diff against the previous tag.
+      # -----------------------------------------------------------------
+      - name: Checkout tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Determine version metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          # Derive an integer Android versionCode from the SemVer triplet.
+          # Strip any pre-release / build-metadata suffix (e.g. "-beta.1"
+          # or "+build.5") before splitting on '.'.
+          CORE="${VERSION%%-*}"
+          CORE="${CORE%%+*}"
+          IFS='.' read -r MAJOR MINOR PATCH EXTRA <<< "$CORE"
+          MAJOR=${MAJOR:-0}; MINOR=${MINOR:-0}; PATCH=${PATCH:-0}
+          if [[ -n "${EXTRA:-}" ]] \
+             || ! [[ "$MAJOR" =~ ^[0-9]+$ && "$MINOR" =~ ^[0-9]+$ && "$PATCH" =~ ^[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG' is not a SemVer-shaped version (expected vMAJOR.MINOR.PATCH[-suffix])."
+            exit 1
+          fi
+          VERSION_CODE=$(( MAJOR * 1000000 + MINOR * 1000 + PATCH ))
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "Building release for tag=$TAG (versionName=$VERSION, versionCode=$VERSION_CODE)"
+      - name: Setup Android build environment
+        uses: ./.github/actions/setup-android
+
+      # -----------------------------------------------------------------
+      # Pre-flight: lint + unit tests. We refuse to ship a release that
+      # would have failed CI on a regular push.
+      # -----------------------------------------------------------------
+      - name: ktlint check
+        run: ./gradlew ktlintCheck --stacktrace
+
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      # -----------------------------------------------------------------
+      # Build the fully-optimised release APK. Identical Gradle target as
+      # the regular CI job — what was tested is what ships. R8 full mode,
+      # resource shrinking, PNG crunching, log stripping and baseline
+      # profile activation are all enabled here. Signed with the
+      # auto-generated debug keystore so the APK installs directly; for
+      # Play Store distribution you must re-sign with your release key.
+      # -----------------------------------------------------------------
+      - name: Build APK
+        run: |
+          ./gradlew :app:assembleRelease --stacktrace \
+            -PversionName="${{ steps.meta.outputs.version }}" \
+            -PversionCode="${{ steps.meta.outputs.version_code }}"
+      # -----------------------------------------------------------------
+      # Stage the APK with a clean, versioned filename.
+      # -----------------------------------------------------------------
+      - name: Stage release artefact
+        id: stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.meta.outputs.version }}"
+          STAGE="release-staging"
+          mkdir -p "$STAGE"
+          APK="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' | head -n1)"
+          if [[ -z "$APK" ]]; then
+            echo "::error::No APK produced by the build."
+            exit 1
+          fi
+          cp "$APK" "$STAGE/local-llm-server-${VERSION}-debugsigned.apk"
+          ls -lh "$STAGE"
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+      # -----------------------------------------------------------------
+      # Generate a changelog from the git log between this tag and the
+      # previous one. Falls back to "Initial release" if there is no
+      # previous tag.
+      # -----------------------------------------------------------------
+      - name: Generate changelog
+        id: changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.meta.outputs.tag }}"
+          PREV="$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)"
+          {
+            echo "## Local LLM Server ${TAG}"
+            echo
+            if [[ -n "$PREV" ]]; then
+              echo "Changes since \`$PREV\`:"
+              echo
+              git log --pretty=format:"- %s (%h)" "${PREV}..${TAG}"
+            else
+              echo "Initial release."
+            fi
+            echo
+            echo
+            echo "### Artefact"
+            echo
+            echo "| File | Purpose |"
+            echo "|------|---------|"
+            echo "| \`local-llm-server-${{ steps.meta.outputs.version }}-debugsigned.apk\` | Side-load APK (release build, debug-signed) |"
+            echo
+            echo "> **Signing:** signed with the auto-generated debug keystore so it installs directly on any device."
+          } > release-notes.md
+          cat release-notes.md
+      # -----------------------------------------------------------------
+      # Publish the GitHub Release. softprops/action-gh-release will
+      # create the release if it doesn't exist or update an existing one
+      # (idempotent — safe to re-run via workflow_dispatch).
+      # -----------------------------------------------------------------
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.tag }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(steps.meta.outputs.tag, '-') }}
+          fail_on_unmatched_files: true
+          files: |
+            ${{ steps.stage.outputs.stage }}/*.apk
+      # -----------------------------------------------------------------
+      # Also upload as a workflow artefact so failed/dispatched runs
+      # leave a record even if the release publish step is skipped.
+      # -----------------------------------------------------------------
+      - name: Upload APK (workflow run)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ steps.meta.outputs.version }}-apk
+          path: ${{ steps.stage.outputs.stage }}/*.apk
+          if-no-files-found: warn
+          retention-days: 90
