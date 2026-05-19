@@ -3,15 +3,17 @@ package de.cyclenerd.android.llm.server.network
 /**
  * Enum representing different types of network interfaces.
  *
- * This classification helps us determine which interfaces are safe
- * for server binding. We only want to bind to WIFI and ETHERNET
- * interfaces, never to MOBILE data.
+ * This classification helps us determine what networks are available.
+ * The server now runs on all interface types, including localhost.
  *
  * Why this matters:
- * Different interface types have different security implications:
- * - WIFI/ETHERNET: Local network, safe for server binding
- * - MOBILE: Public internet, dangerous for server binding
- * - LOOPBACK: Only accessible locally, not useful for network server
+ * Different interface types show what connections are available:
+ * - WIFI/ETHERNET: Local network interfaces
+ * - MOBILE: Cellular data interface
+ * - LOOPBACK: Localhost, always available
+ * - UNKNOWN: Unrecognized interface
+ *
+ * Note: This is informational. Server no longer rejects any interface.
  */
 enum class InterfaceType {
     /**
@@ -22,8 +24,7 @@ enum class InterfaceType {
      * - wifi0
      * - wl0
      *
-     * This is the most common interface type on Android devices
-     * and is safe for server binding as it represents a local network.
+     * Represents a wireless local network connection.
      */
     WIFI,
 
@@ -39,7 +40,7 @@ enum class InterfaceType {
      * - Tablets with USB-C Ethernet adapters
      * - Development devices with Ethernet dongles
      *
-     * Safe for server binding as it represents a local network.
+     * Represents a wired local network connection.
      */
     ETHERNET,
 
@@ -54,9 +55,8 @@ enum class InterfaceType {
      * - v4-rmnet0 (dual-stack)
      * - clat4 (carrier NAT)
      *
-     * NEVER bind server to this interface!
-     * These interfaces have public or carrier-NAT IPs that could
-     * expose the server to the internet.
+     * Represents a cellular data connection.
+     * Note: Server still runs on this interface, but localhost is preferred.
      */
     MOBILE,
 
@@ -67,16 +67,15 @@ enum class InterfaceType {
      * - lo
      *
      * This is the 127.0.0.1 interface used for local-only communication.
-     * Not useful for a network server as it's only accessible from
-     * the device itself.
+     * Always available and is the primary way to access the server
+     * when no other networks are connected.
      */
     LOOPBACK,
 
     /**
      * Unknown or unrecognized interface type.
      *
-     * For safety, treat unknown interfaces as potentially dangerous
-     * and don't bind to them. Better to be cautious.
+     * For unrecognized interfaces, we default to treating them as available.
      */
     UNKNOWN,
 }
@@ -90,10 +89,10 @@ enum class InterfaceType {
  *
  * Detection strategy:
  * 1. Check if interface is loopback (via Java API)
- * 2. Match against known mobile data patterns (highest priority for security)
+ * 2. Match against known mobile data patterns
  * 3. Match against known WiFi patterns
  * 4. Match against known Ethernet patterns
- * 5. Default to UNKNOWN for safety
+ * 5. Default to UNKNOWN for unrecognized interfaces
  *
  * Why interface names?
  * Android doesn't provide a reliable API to query interface type directly.
@@ -105,8 +104,7 @@ enum class InterfaceType {
  * - Future Android versions might change conventions
  * - Some exotic devices might use different names
  *
- * For these edge cases, we default to UNKNOWN which prevents binding,
- * erring on the side of security.
+ * For these edge cases, we default to UNKNOWN.
  *
  * @return The detected interface type
  */
@@ -118,7 +116,7 @@ fun java.net.NetworkInterface.detectType(): InterfaceType {
         return InterfaceType.LOOPBACK
     }
 
-    // Check for mobile data patterns (CRITICAL for security)
+    // Check for mobile data patterns
     when {
         name.startsWith("rmnet") -> return InterfaceType.MOBILE
         name.startsWith("ccmni") -> return InterfaceType.MOBILE
@@ -141,16 +139,16 @@ fun java.net.NetworkInterface.detectType(): InterfaceType {
         name.startsWith("lan") -> return InterfaceType.ETHERNET
     }
 
-    // Unknown interface - don't bind for safety
+    // Unknown interface
     return InterfaceType.UNKNOWN
 }
 
 /**
  * Checks if this interface type is safe for server binding.
  *
- * Only WIFI and ETHERNET are considered safe as they represent
- * local networks where we want the server to be accessible.
+ * Now returns true for all types - server runs on localhost
+ * even without WiFi/Ethernet connections.
  *
- * @return true if safe to bind, false otherwise
+ * @return always true (server is always safe now)
  */
-fun InterfaceType.isSafeForBinding(): Boolean = this == InterfaceType.WIFI || this == InterfaceType.ETHERNET
+fun InterfaceType.isSafeForBinding(): Boolean = true
