@@ -12,7 +12,7 @@ import de.cyclenerd.android.llm.server.server.models.ChatCompletionRequest
  * - **Out of Scope**: Rate limiting, input validation, DoS protection
  *
  * Assumptions:
- * - Server runs on a trusted local network (home/office WiFi)
+ * - Server runs on a trusted local network (home/office WiFi) or localhost
  * - All devices on the network are trusted
  * - Network traffic is not encrypted (local only)
  * - No authentication required (protected by network isolation)
@@ -31,21 +31,28 @@ object SecurityConfig {
      * Allowed IP address patterns for server binding.
      *
      * These patterns define which IP ranges the server is allowed to bind to.
-     * Only private IP ranges (RFC1918) are permitted to prevent accidental
-     * exposure to public internet.
+     * Only private IP ranges (RFC1918), localhost (127.x.x.x, ::1), and link-local
+     * addresses are permitted to prevent accidental exposure to public internet.
      *
-     * Patterns:
+     * Patterns (in priority order):
+     * - 127.* - IPv4 loopback (localhost)
+     * - ::1 - IPv6 loopback
+     * - fe80:.* - IPv6 link-local
      * - 192.168.* - Class C private networks (home routers)
      * - 10.* - Class A private networks (corporate networks)
      * - 172.16.* through 172.31.* - Class B private networks
-     * - 127.* - Loopback (localhost)
      */
     val ALLOWED_IP_PATTERNS =
         listOf(
+            // Localhost / Loopback (highest priority)
+            Regex("^127\\.\\d+\\.\\d+\\.\\d+$"),
+            Regex("^::1$"),
+            // IPv6 link-local
+            Regex("^fe80:.*"),
+            // RFC1918 Private networks
             Regex("^192\\.168\\.\\d+\\.\\d+$"),
             Regex("^10\\.\\d+\\.\\d+\\.\\d+$"),
             Regex("^172\\.(1[6-9]|2[0-9]|3[0-1])\\.\\d+\\.\\d+$"),
-            Regex("^127\\.\\d+\\.\\d+\\.\\d+$"),
         )
 
     /**
@@ -82,7 +89,8 @@ object SecurityConfig {
      * Checks if an IP address is allowed for server binding.
      *
      * This prevents the server from binding to public IP addresses,
-     * which would expose it to the internet.
+     * which would expose it to the internet. Localhost and RFC1918
+     * private addresses are allowed.
      *
      * @param ipAddress The IP address to check
      * @return true if the IP is in an allowed range, false otherwise
