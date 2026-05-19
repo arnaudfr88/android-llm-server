@@ -83,13 +83,15 @@ class InterfaceTypeTest {
     }
 
     @Test
-    fun `isSafeForBinding returns true for WiFi and Ethernet only`() {
+    fun `isSafeForBinding returns true for all interface types`() {
+        // All interface types are now safe for binding since the server
+        // can run on any interface and security is handled by SecurityConfig
+        // which restricts binding to localhost and private RFC1918 addresses
         assertTrue(InterfaceType.WIFI.isSafeForBinding())
         assertTrue(InterfaceType.ETHERNET.isSafeForBinding())
-
-        assertFalse(InterfaceType.MOBILE.isSafeForBinding())
-        assertFalse(InterfaceType.LOOPBACK.isSafeForBinding())
-        assertFalse(InterfaceType.UNKNOWN.isSafeForBinding())
+        assertTrue(InterfaceType.MOBILE.isSafeForBinding())
+        assertTrue(InterfaceType.LOOPBACK.isSafeForBinding())
+        assertTrue(InterfaceType.UNKNOWN.isSafeForBinding())
     }
 
     @Test
