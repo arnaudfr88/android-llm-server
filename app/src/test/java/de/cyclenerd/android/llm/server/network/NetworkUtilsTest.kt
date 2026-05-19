@@ -82,10 +82,12 @@ class NetworkUtilsTest {
     }
 
     @Test
-    fun `isValidBindAddress rejects loopback`() {
-        assertFalse(NetworkUtils.isValidBindAddress("127.0.0.1"))
-        assertFalse(NetworkUtils.isValidBindAddress("127.0.0.2"))
-        assertFalse(NetworkUtils.isValidBindAddress("127.255.255.254"))
+    fun `isValidBindAddress accepts loopback`() {
+        // Server now supports running on loopback (127.x.x.x)
+        // for standalone operation without WiFi/Ethernet
+        assertTrue(NetworkUtils.isValidBindAddress("127.0.0.1"))
+        assertTrue(NetworkUtils.isValidBindAddress("127.0.0.2"))
+        assertTrue(NetworkUtils.isValidBindAddress("127.255.255.254"))
     }
 
     @Test
@@ -107,17 +109,17 @@ class NetworkUtilsTest {
     }
 
     @Test
-    fun `getLocalIpAddresses returns list without crashing`() {
-        // This test just verifies the function doesn't crash
+    fun `getLocalIpAddresses returns valid bind addresses`() {
+        // This test verifies the function doesn't crash
         // Actual IP detection is tested in instrumented tests
         val ips = NetworkUtils.getLocalIpAddresses()
 
         // Should return a list (may be empty in test environment)
-        // All returned IPs should be valid private addresses
+        // All returned IPs should be valid bind addresses (loopback or private)
         ips.forEach { ip ->
             assertTrue(
-                "Returned IP $ip should be private",
-                NetworkUtils.isPrivateIpAddress(ip),
+                "Returned IP $ip should be a valid bind address",
+                NetworkUtils.isValidBindAddress(ip),
             )
         }
     }
