@@ -78,6 +78,15 @@ jobs:
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
+        # Étape à ajouter AVANT le build
+      - name: Auto-format code with Ktlint
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew ktlintFormat || true
+          elif [ -f "./android/gradlew" ]; then
+            cd android && ./gradlew ktlintFormat || true
+          fi
+
       # -----------------------------------------------------------------
       # Build the fully-optimised release APK. Identical Gradle target as
       # the regular CI job — what was tested is what ships. R8 full mode,
