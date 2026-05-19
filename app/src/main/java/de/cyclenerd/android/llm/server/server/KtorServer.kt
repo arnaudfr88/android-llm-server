@@ -68,15 +68,15 @@ class KtorServer(
 
     /**
      * Start the server. Validates that the bind address is private (RFC1918)
-     * before binding so a misconfiguration cannot expose the API to the
-     * public internet.
+     * or localhost (127.0.0.1) before binding so a misconfiguration cannot
+     * expose the API to the public internet.
      */
     suspend fun start() {
         check(server == null) { "Server already running" }
         require(bindAddresses.isNotEmpty()) { "No bind addresses provided" }
         bindAddresses.forEach { addr ->
-            require(addr != "0.0.0.0" && !addr.startsWith("127.")) {
-                "Invalid bind address: $addr"
+            require(addr != "0.0.0.0") {
+                "Invalid bind address: $addr (cannot bind to 0.0.0.0)"
             }
         }
 
@@ -172,8 +172,8 @@ class KtorServer(
  * Plugin layout was chosen for the lowest per-request overhead:
  *  - [ContentNegotiation] uses a single shared [Json] instance.
  *  - [CORS] is configured for `anyHost()` because the server only ever
- *    binds to a private IP (defence in depth — no harm in being permissive
- *    here since the only path to the server is the LAN).
+ *    binds to a private IP or localhost (defence in depth — no harm in being
+ *    permissive here since the only path to the server is the LAN or localhost).
  *  - [StatusPages] catches everything so we never leak a stack trace.
  *  - The request logging interceptor only attaches when a callback was
  *    supplied — releases that don't need request logs pay zero overhead.
