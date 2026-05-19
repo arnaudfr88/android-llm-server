@@ -6,71 +6,31 @@ import java.net.NetworkInterface
 /**
  * Network utility functions for detecting local IP addresses.
  *
- * This utility ensures the LLM server only binds to local network interfaces
- * (WiFi/Ethernet) and never exposes itself on mobile data connections which
- * could be accessible from the public internet.
- *
- * Why IP filtering matters:
- * Without proper filtering, the server could bind to a mobile data interface
- * with a public IP address, potentially exposing the LLM API to the internet.
- * This would be a serious security risk as there's no authentication.
+ * This utility now accepts all network interfaces including loopback,
+ * allowing the LLM server to run even without WiFi/Ethernet connections.
+ * The server is still restricted by SecurityConfig to only bind to
+ * localhost and private RFC1918 addresses.
  */
 object NetworkUtils {
     /**
-     * Mobile data interface name patterns to exclude.
-     *
-     * These interface names indicate cellular/mobile data connections
-     * which we must never bind to for security reasons.
-     *
-     * Common patterns across Android devices:
-     * - rmnet*: Qualcomm-based devices (most Android phones)
-     * - ccmni*: MediaTek-based devices
-     * - wwan*: Wireless WAN (mobile broadband)
-     * - pdp_ip*: Samsung devices
-     * - v4-rmnet*: Dual-stack mobile data
-     * - clat4: Carrier-grade NAT transition
-     */
-    private val MOBILE_INTERFACE_PATTERNS =
-        setOf(
-            "rmnet",
-            "ccmni",
-            "wwan",
-            "pdp_ip",
-            "v4-rmnet",
-            "clat",
-        )
-
-    /**
      * Retrieves all local IP addresses suitable for server binding.
      *
-     * This function filters network interfaces to return only IPs that are:
-     * 1. IPv4 addresses (we don't support IPv6 binding yet)
+     * This function now returns:
+     * 1. IPv4 loopback addresses (127.x.x.x)
      * 2. Private network ranges (RFC1918)
-     * 3. Not on mobile data interfaces
-     * 4. Not loopback addresses
+     * 3. IPv4 addresses from any active interface
      *
-     * Security design:
-     * By only returning private IP addresses from WiFi/Ethernet interfaces,
-     * we ensure the server is ONLY accessible within the local network.
-     * This prevents accidental exposure to the internet via mobile data.
-     *
-     * Why we exclude mobile data:
-     * Mobile data interfaces typically have public IP addresses (or carrier NAT).
-     * Binding to these would make the server accessible from the internet,
-     * which is dangerous since we have no authentication mechanism.
+     * No more filtering by interface type - server works standalone
+     * on localhost without WiFi/Ethernet.
      *
      * Example valid IPs returned:
+     * - 127.0.0.1 (loopback - ALWAYS available)
      * - 192.168.211.100 (home WiFi)
      * - 10.0.0.50 (office network)
      * - 172.16.0.10 (private LAN)
      *
-     * Example IPs NOT returned:
-     * - 127.0.0.1 (loopback)
-     * - 8.8.8.8 (public internet)
-     * - IPs from rmnet0, ccmni0 (mobile data)
-     *
      * @return List of local IPv4 addresses safe for server binding.
-     *         Empty list if no suitable interfaces are found.
+     *         Always includes 127.0.0.1 as fallback.
      */
     fun getLocalIpAddresses(): List<String> {
         val localIps = mutableListOf<String>()
@@ -82,13 +42,8 @@ object NetworkUtils {
             while (interfaces.hasMoreElements()) {
                 val networkInterface = interfaces.nextElement()
 
-                // Skip if interface is down or loopback
-                if (!networkInterface.isUp || networkInterface.isLoopback) {
-                    continue
-                }
-
-                // Check if this is a mobile data interface
-                if (isMobileDataInterface(networkInterface)) {
+                // Skip if interface is down
+                if (!networkInterface.isUp) {
                     continue
                 }
 
@@ -98,40 +53,29 @@ object NetworkUtils {
                     val address = addresses.nextElement()
 
                     // Only process IPv4 addresses
-                    if (address is InetAddress && !address.isLoopbackAddress) {
+                    if (address is InetAddress) {
                         val ip = address.hostAddress ?: continue
 
-                        // Only include private network IPs (RFC1918)
-                        if (isPrivateIpAddress(ip)) {
-                            localIps.add(ip)
+                        // Include loopback (127.x.x.x) or private network IPs (RFC1918)
+                        if (address.isLoopbackAddress || isPrivateIpAddress(ip)) {
+                            if (!localIps.contains(ip)) {
+                                localIps.add(ip)
+                            }
                         }
                     }
                 }
             }
         } catch (e: Exception) {
             // Network interface enumeration can fail on some devices
-            // Return empty list rather than crashing
-            return emptyList()
+            // Continue with what we found
+        }
+
+        // Ensure localhost is always available as fallback
+        if (!localIps.contains("127.0.0.1")) {
+            localIps.add("127.0.0.1")
         }
 
         return localIps
-    }
-
-    /**
-     * Checks if a network interface is a mobile data connection.
-     *
-     * This uses interface naming patterns to detect cellular connections.
-     * Different Android device manufacturers use different naming schemes,
-     * so we check against all known patterns.
-     *
-     * @param networkInterface The interface to check
-     * @return true if this is a mobile data interface, false otherwise
-     */
-    private fun isMobileDataInterface(networkInterface: NetworkInterface): Boolean {
-        val name = networkInterface.name.lowercase()
-        return MOBILE_INTERFACE_PATTERNS.any { pattern ->
-            name.startsWith(pattern)
-        }
     }
 
     /**
@@ -177,18 +121,16 @@ object NetworkUtils {
     /**
      * Checks if an IP address is suitable for server binding.
      *
-     * This combines multiple validations:
-     * - Must be a valid IPv4 address
-     * - Must be in a private network range
-     * - Must not be a loopback address
+     * Now accepts localhost and private addresses.
      *
      * @param ip IPv4 address string
      * @return true if safe to bind, false otherwise
      */
     fun isValidBindAddress(ip: String): Boolean {
-        if (ip.isEmpty() || ip == "127.0.0.1" || ip.startsWith("127.")) {
+        if (ip.isEmpty()) {
             return false
         }
-        return isPrivateIpAddress(ip)
+        // Accept loopback (127.x.x.x) or private addresses
+        return ip.startsWith("127.") || isPrivateIpAddress(ip)
     }
 }
